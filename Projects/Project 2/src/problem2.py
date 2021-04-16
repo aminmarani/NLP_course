@@ -19,7 +19,7 @@ class HMM():
         self.max_sentence_len = corpora.max_len
 
         # a very small positive number for Laplacian smoothing
-        self.eps = 1e-8
+        self.eps = 1e-9
 
         # for HMM parameters obtained from MLE on the POS-tagged corpus
         self.A0 = np.zeros((self.num_tags, self.num_tags)) + self.eps
@@ -66,7 +66,10 @@ class HMM():
                 if i < len(sentence) -1: #we don't update qt+1 and A0 for t+1 at last i
                     qt1 = sentence[i+1][1] #q_j
                     #updating the parameters
-                    self.A0[qt,qt1] += 1 #add one to A_ij
+                    if self.A0[qt,qt1]>=1.0: #that means it is already initialized by the first occurence
+                        self.A0[qt,qt1] += 1 #add one to A_ij
+                    else: #otherwise we have to initiate it with 1 to get rid of eps
+                        self.A0[qt,qt1] = 1
                     #keeping the number of occurences for (qt=i)
                     if qt in occurences.keys():
                         occurences[qt] += 1
@@ -74,7 +77,10 @@ class HMM():
                         occurences[qt] = 1
 
                 #updating the parameters
-                self.B0[qt,o] += 1 #add one to B_ij
+                if self.B0[qt,o]>=1.0: #that means it is already initialized by the first occurence
+                    self.B0[qt,o] += 1 #add one to B_ij
+                else: #otherwise we have to initiate it with 1 to get rid of eps
+                    self.B0[qt,o] = 1 
                 #keeping the number of occurences for (qt=i)
                 if qt in occurences_O.keys():
                     occurences_O[qt] += 1
@@ -88,7 +94,7 @@ class HMM():
         #updating A0 and B0 using the occurences for each q_t=i
         for k in occurences.keys():
             self.A0[k,:] = self.A0[k,:] / occurences[k]
-            self.B0[k,:] = self.B0[k,:] / (occurences_O[k]+self.eps*self.B0.shape[1])
+            self.B0[k,:] = self.B0[k,:] / (occurences_O[k])#+self.eps*self.B0.shape[1])
 
         #updating PI
         self.pi0 = self.pi0 / len(training_sentences)
@@ -96,6 +102,8 @@ class HMM():
         self.A = self.A0[:,:]
         self.pi = self.pi0[:,:]
         self.B = self.B0[:,:]
+
+        print(np.sum(self.B, axis=1))
         #########################################
 
     # -------------------------------------------------------------------------
@@ -158,6 +166,23 @@ class HMM():
         """
         #########################################
         ## INSERT YOUR CODE HERE
+        #let beta_T-1(i) = 1, scaled by C_T-1
+        T = len(sentence)
+        N = self.num_tags
+        #initializing alpha
+        beta = np.zeros((N,self.max_sentence_len))
+        beta[:,T-1] = self.scales[0,T-1]
+
+        #beta-pass
+        for t in reversed(range(0,T-1)):
+            for i in range(N):
+                beta[i,t] = np.sum(self.A[i,:]*self.B[:,sentence[t+1][0]]*beta[:,t+1])
+                beta[i,t] = beta[i,t] * self.scales[0,t]
+                # for j in range(N):
+                #     beta[]
+
+        self.beta = beta[:,:]
+
         #########################################
 
     # -------------------------------------------------------------------------
@@ -172,4 +197,38 @@ class HMM():
         """
         #########################################
         ## INSERT YOUR CODE HERE
+        T = len(sentence)
+        N = self.num_tags
+        #initializing viterbi and backpointers
+        viterbi = np.zeros((N,self.max_sentence_len))
+        backpointers = np.zeros((N,self.max_sentence_len))
+
+        viterbi[:,0] = self.pi[0,:] * self.B[:,sentence[0][0]]
+
+        #recursion step
+        for t in range(1,T):
+            for s in range(N):
+                #viterbi[s,t] = np.max(np.log(viterbi[:,t-1]) + np.log(self.A[:,s]) + np.log(self.B[s,sentence[t][0]]))
+                #backpointers[s,t] = np.argmax(np.log(viterbi[:,t-1]) + np.log(self.A[:,s]) + np.log(self.B[s,sentence[t][0]]))
+                viterbi[s,t] = np.max(viterbi[:,t-1] * self.A[:,s] * self.B[s,sentence[t][0]])
+                backpointers[s,t] = np.argmax(viterbi[:,t-1] * self.A[:,s] * self.B[s,sentence[t][0]])
+
+        bestpathprob = np.max(viterbi[:,T-1]) #T-1 = the last item in the Viterbi
+        bestpathpointer = np.argmax(viterbi[:,T-1]) 
+
+        #print(bestpathpointer)
+        #finding best path
+        bestpath = np.zeros((1,self.max_sentence_len)) #initilize with zeros
+        #set last step t=T (or T-1 actually) to bestpathpointer
+        bestpath[0,T-1] = bestpathpointer
+
+        for t in reversed(range(0,T-1)): #getting back from last observation (T) to first (O0)
+            bestpath[0,t] = backpointers[int(bestpath[0,t+1]),t]
+
+        self.pred_seq[0,0:-1] = bestpath[:,1:]
+        self.v = viterbi[:,:]
+        self.backpointers = backpointers[:,:]
+
+        print(bestpath)
+        return np.log(bestpathprob)
         #########################################
