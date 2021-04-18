@@ -19,7 +19,7 @@ class HMM():
         self.max_sentence_len = corpora.max_len
 
         # a very small positive number for Laplacian smoothing
-        self.eps = 1e-9
+        self.eps = 1e-8
 
         # for HMM parameters obtained from MLE on the POS-tagged corpus
         self.A0 = np.zeros((self.num_tags, self.num_tags)) + self.eps
@@ -51,7 +51,6 @@ class HMM():
         """
         #########################################
         ## INSERT YOUR CODE HERE
-        import copy #using deepcopy (we can also use A = A0[:,:])
         #each training_sentences entry is (word index,tag index)
 
         #A dictionary to keep #(qt=i) for qt=i and qt+1=j
@@ -76,6 +75,8 @@ class HMM():
                     else:
                         occurences[qt] = 1
 
+                
+
                 #updating the parameters
                 if self.B0[qt,o]>=1.0: #that means it is already initialized by the first occurence
                     self.B0[qt,o] += 1 #add one to B_ij
@@ -89,12 +90,22 @@ class HMM():
 
                 
             #updating pi_i
-            self.pi0[sentence[0][1],0] += 1
+            if self.pi0[sentence[0][1],0] < 1.0:
+                self.pi0[sentence[0][1],0] = 1
+            else:
+                self.pi0[sentence[0][1],0] += 1
+
+            # print(sentence)
+            # print(occurences)
+            # print(occurences_O)
+            # return 0
 
         #updating A0 and B0 using the occurences for each q_t=i
         for k in occurences.keys():
-            self.A0[k,:] = self.A0[k,:] / occurences[k]
-            self.B0[k,:] = self.B0[k,:] / (occurences_O[k])#+self.eps*self.B0.shape[1])
+            for j in range(self.num_tags):
+                self.A0[k,j] = self.A0[k,j] / occurences[k]
+            for j in range(self.num_words):
+                self.B0[k,j] = self.B0[k,j] / (occurences_O[k]+self.eps*self.B0.shape[1])
 
         #updating PI
         self.pi0 = self.pi0 / len(training_sentences)
@@ -103,7 +114,90 @@ class HMM():
         self.pi = self.pi0[:,:]
         self.B = self.B0[:,:]
 
-        print(np.sum(self.B, axis=1))
+        ###print(self.A[0, 0:2])
+        ###print(np.sum(self.B, axis=1))
+
+        # #Dictionaries to keep track of co-occurences and frequencies
+        # qq_occ = {} 
+        # qo_occ = {}
+        # qq_term = {}
+        # qo_term = {}
+        # q1_occ = {}
+
+        # for sentence in training_sentences:
+        #     for t in range(len(sentence)-1): #we don't consider last one for A_ij
+        #         qt = sentence[t][1]
+        #         ot = sentence[t][0]
+        #         qt1 = sentence[t+1][1]
+
+        #         #adding to dictionaries
+        #         if (qt,qt1) in qq_occ.keys():
+        #             qq_occ[qt,qt1] +=1 
+        #         else:
+        #             qq_occ[qt,qt1] =1 
+
+        #         if (qt,ot) in qo_occ.keys():
+        #             qo_occ[qt,ot] += 1
+        #         else:
+        #             qo_occ[qt,ot] = 1
+
+        #         if qt in qq_term.keys():
+        #             qq_term[qt] += 1
+        #         else:
+        #             qq_term[qt] = 1
+
+        #         if qt in qo_term.keys():
+        #             qo_term[qt] += 1
+        #         else:
+        #             qo_term[qt] = 1
+
+            
+        #     #adding last T in qo_occ and qo_term
+        #     qt = sentence[-1][1]
+        #     ot = sentence[-1][0]
+        #     if (qt,ot) in qo_occ.keys():
+        #         qo_occ[qt,ot] += 1
+        #     else:
+        #         qo_occ[qt,ot] = 1
+
+        #     if qt in qo_term.keys():
+        #         qo_term[qt] += 1
+        #     else:
+        #         qo_term[qt] = 1
+
+        #     #counting q1=i
+        #     if sentence[0][1] in q1_occ.keys():
+        #         q1_occ[sentence[0][1]] += 1
+        #     else:
+        #         q1_occ[sentence[0][1]] = 1
+
+        # for k,v in qq_occ.items():
+        #     self.A[k[0],k[1]] = v/qq_term[k[0]]
+
+        # for k,v in qo_occ.items():
+        #     self.B[k[0],:] = self.B[k[0],:]/qo_term[k[0]]
+        # for k,v in qo_occ.items():
+        #     self.B[k[0],k[1]] = v/qo_term[k[0]]
+        
+
+        # for k,v in q1_occ.items():
+        #     self.pi[k] = v/len(training_sentences)
+
+
+        # # for i in range(self.B.shape[0]):
+        # #     self.B[i,:] = self.B[i,:] / np.sum(self.B[i,:])
+
+
+        # self.A0[:,:] = self.A[:,:]
+        # self.B0[:,:] = self.B[:,:]
+        # self.pi0[:,:] = self.pi
+
+
+
+        # print(self.B[0,0:10])
+        # print(np.sum(self.B, axis=1))
+
+
         #########################################
 
     # -------------------------------------------------------------------------
@@ -201,17 +295,24 @@ class HMM():
         N = self.num_tags
         #initializing viterbi and backpointers
         viterbi = np.zeros((N,self.max_sentence_len))
+        viterbi2 = np.zeros((N,self.max_sentence_len))
         backpointers = np.zeros((N,self.max_sentence_len))
 
         viterbi[:,0] = self.pi[0,:] * self.B[:,sentence[0][0]]
+        viterbi[:,0] = np.log(self.pi[0,:]) + np.log(self.B[:,sentence[0][0]])
 
         #recursion step
         for t in range(1,T):
             for s in range(N):
-                #viterbi[s,t] = np.max(np.log(viterbi[:,t-1]) + np.log(self.A[:,s]) + np.log(self.B[s,sentence[t][0]]))
-                #backpointers[s,t] = np.argmax(np.log(viterbi[:,t-1]) + np.log(self.A[:,s]) + np.log(self.B[s,sentence[t][0]]))
-                viterbi[s,t] = np.max(viterbi[:,t-1] * self.A[:,s] * self.B[s,sentence[t][0]])
-                backpointers[s,t] = np.argmax(viterbi[:,t-1] * self.A[:,s] * self.B[s,sentence[t][0]])
+                #viterbi[s,t] = np.max(viterbi[:,t-1] * self.A[:,s] * self.B[s,sentence[t][0]])
+                viterbi[s,t] = np.max( (viterbi[:,t-1]) + np.log(self.A[:,s]) + np.log(self.B[s,sentence[t][0]]))
+                backpointers[s,t] = np.argmax( (viterbi[:,t-1]) + np.log(self.A[:,s]) + np.log(self.B[s,sentence[t][0]]))
+                #backpointers[s,t] = np.argmax(viterbi[:,t-1] * self.A[:,s] * self.B[s,sentence[t][0]])
+
+        # for t in range(4):
+        #     #print(backpointers[:,t])
+        #     print((viterbi[:,t]))
+
 
         bestpathprob = np.max(viterbi[:,T-1]) #T-1 = the last item in the Viterbi
         bestpathpointer = np.argmax(viterbi[:,T-1]) 
@@ -222,13 +323,13 @@ class HMM():
         #set last step t=T (or T-1 actually) to bestpathpointer
         bestpath[0,T-1] = bestpathpointer
 
-        for t in reversed(range(0,T-1)): #getting back from last observation (T) to first (O0)
-            bestpath[0,t] = backpointers[int(bestpath[0,t+1]),t]
+        for t in reversed(range(1,T)): #getting back from last observation (T) to first (O0)
+            bestpath[0,t-1] = backpointers[int(bestpath[0,t]),t]
 
-        self.pred_seq[0,0:-1] = bestpath[:,1:]
+        self.pred_seq[0,:] = bestpath[:,:]
         self.v = viterbi[:,:]
         self.backpointers = backpointers[:,:]
 
-        print(bestpath)
-        return np.log(bestpathprob)
+        #print(bestpath)
+        return bestpathprob
         #########################################

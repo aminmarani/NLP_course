@@ -55,6 +55,37 @@ def em_one_sentence(model, sentence, new_A, new_B, new_pi):
     """
     #########################################
     ## INSERT YOUR CODE HERE
+    #initialize eta and kesi
+    digamma = np.zeros((model.num_tags,model.num_tags))
+    gamma = np.zeros((1,model.num_tags))
+    log_p = model.forward(sentence)
+    model.backward(sentence)
+
+    for t in range(len(sentence)-1):
+    	gamma = np.zeros((1,model.num_tags))
+    	for i in range(model.num_tags):
+    		digamma[i,:] = model.alpha[i,t] * model.A[i,:] * model.B[:,sentence[t+1][0]] * model.beta[:,t+1]
+    		#gamma[0,i] += np.sum(digamma[i,:])
+
+    	#normalize
+    	digamma = digamma / np.sum(digamma)
+    	gamma[0,:] = np.sum(digamma,axis=0)
+    	#update new_A and new_B
+    	new_A += digamma
+    	new_B[:,sentence[t][0]] += gamma[0,:]
+    	#update new_pi only at t=0
+    	if t == 0:
+    		new_pi[:,0] += np.sum(digamma,axis=1)
+    		#new_pi[:,0] += gamma[0,:]
+
+
+    #special case for t = T-1
+    gamma[0,:] = model.alpha[:,len(sentence)-1]
+    new_B[:,sentence[len(sentence)-1][0]] += gamma[0,:]
+
+
+
+    return log_p
     #########################################
 
 
@@ -71,8 +102,18 @@ def maximization(model, new_A, new_B, new_pi, mu):
     """
     #########################################
     ## INSERT YOUR CODE HERE
-    #########################################
+    new_A = new_A / np.sum(new_A,axis=1)
+    model.A = mu * model.A + (1-mu) * new_A
 
+    #new_B = new_B / np.sum(new_B,axis=1)
+    for i in range(new_B.shape[0]):
+    	new_B[i,:] = new_B[i,:] / np.sum(new_B[i,:])
+    	#for o in range(new_B.shape[1]):
+    	#	new_B[i,o] = new_B[i,o] / np.sum(new_B[i,:])
+    model.B = mu * model.B + (1-mu) * new_B
+
+    model.pi = mu*model.pi + (1-mu)*new_pi
+    #########################################
 
 # -------------------------------------------------------------------------
 def evaluate(model, test_corpus):
@@ -93,3 +134,17 @@ def evaluate(model, test_corpus):
                 correct += 1.0
         total += len(sentence)
     return correct / total, total_log_p
+
+
+if __name__ == 'main':
+	training_path = '../data/train.txt'
+	test_path = '../data/test.txt'
+
+	corpora = Corpora()
+
+	corpora.read_corpus(training_path, is_training=True)
+	corpora.read_corpus(test_path, is_training=False)
+
+	model = HMM(corpora)
+	model.mle(corpora.training_sentences)
+	em(model, corpora, 0.1, num_iters = 30)
