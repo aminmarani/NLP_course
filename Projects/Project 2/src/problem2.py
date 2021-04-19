@@ -105,7 +105,9 @@ class HMM():
             for j in range(self.num_tags):
                 self.A0[k,j] = self.A0[k,j] / occurences[k]
             for j in range(self.num_words):
-                self.B0[k,j] = self.B0[k,j] / (occurences_O[k]+self.eps*self.B0.shape[1])
+                self.B0[k,j] = self.B0[k,j] / (occurences_O[k])#+self.eps*self.B0.shape[1])
+            self.B0[k,:] = self.B0[k,:] / np.sum(self.B0[k,:])
+            self.A0[k,:] = self.A0[k,:] / np.sum(self.A0[k,:])
 
         #updating PI
         self.pi0 = self.pi0 / len(training_sentences)
@@ -295,10 +297,10 @@ class HMM():
         N = self.num_tags
         #initializing viterbi and backpointers
         viterbi = np.zeros((N,self.max_sentence_len))
-        viterbi2 = np.zeros((N,self.max_sentence_len))
+        #viterbi2 = np.zeros((N,self.max_sentence_len))
         backpointers = np.zeros((N,self.max_sentence_len))
 
-        viterbi[:,0] = self.pi[0,:] * self.B[:,sentence[0][0]]
+        #viterbi[:,0] = self.pi[0,:] * self.B[:,sentence[0][0]]
         viterbi[:,0] = np.log(self.pi[0,:]) + np.log(self.B[:,sentence[0][0]])
 
         #recursion step
@@ -309,8 +311,8 @@ class HMM():
                 backpointers[s,t] = np.argmax( (viterbi[:,t-1]) + np.log(self.A[:,s]) + np.log(self.B[s,sentence[t][0]]))
                 #backpointers[s,t] = np.argmax(viterbi[:,t-1] * self.A[:,s] * self.B[s,sentence[t][0]])
 
-        # for t in range(4):
-        #     #print(backpointers[:,t])
+        # for t in range(1,4):
+        #     print(backpointers[:,t])
         #     print((viterbi[:,t]))
 
 
@@ -330,6 +332,6 @@ class HMM():
         self.v = viterbi[:,:]
         self.backpointers = backpointers[:,:]
 
-        #print(bestpath)
+        #print(bestpathprob)
         return bestpathprob
         #########################################

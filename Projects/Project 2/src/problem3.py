@@ -136,7 +136,8 @@ def evaluate(model, test_corpus):
     return correct / total, total_log_p
 
 
-if __name__ == 'main':
+
+if __name__ == '__main__':
 	training_path = '../data/train.txt'
 	test_path = '../data/test.txt'
 
@@ -147,4 +148,4 @@ if __name__ == 'main':
 
 	model = HMM(corpora)
 	model.mle(corpora.training_sentences)
-	em(model, corpora, 0.1, num_iters = 30)
+	em(model, corpora, 0.9, num_iters = 30)
