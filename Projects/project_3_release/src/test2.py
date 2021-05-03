@@ -25,4 +25,4 @@ def test_grow_and_print_node():
     ''' (20 points) problem2: grow_node and print_node'''
     root = Node('ROOT')
     gen.grow_node(root)
-    assert gen.print_node(root) == '(ROOT (S (NP (Det a) (Noun pickle)) (VP (Verb wanted) (NP (Det a) (Noun pickle)))) .)'
+    assert gen.print_node(root) == '(ROOT (S (NP (Det a) (Noun pickle)) (VP (Verb wanted) (NP (Det a) (Noun pickle)))) (Period .))'
