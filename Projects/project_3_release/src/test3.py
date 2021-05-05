@@ -13,7 +13,7 @@ cfg.load_grammar(grammar_path)
 parser = CYKParser(cfg)
 
 def test_construct_larger_parses():
-    """ (15 points) problem3: selectRule """
+    """ (15 points) problem3: test_construct_larger_parses """
     left = Cell()
     left.parses.append(Entry({'lhs': 'Verb',
                               'terminal': 'pickled'}))
@@ -30,7 +30,7 @@ def test_construct_larger_parses():
         assert e.terminal is None
 
 def test_parse():
-    """ (15 points) problem3: selectRule """
+    """ (15 points) problem3: test_parse """
     sentence = ['perplexed', 'president']
     parser.parse(sentence)
 
@@ -39,7 +39,7 @@ def test_parse():
     assert parser.table[(0,1)].parses[0].rhs_second.lhs == 'Noun'
 
 def test_print_entry():
-    """ (15 points) problem3: selectRule """
+    """ (15 points) problem3: test_print_entry """
     e1 = Entry({'lhs': 'Adj',
             'terminal': 'pickled'})
     assert e1.lhs == 'Adj'

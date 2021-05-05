@@ -69,7 +69,23 @@ class CYKParser:
         :return: a list of constructed parses, each is of Entry type. Can be an empty list.
         """
         #########################################
-        ## INSERT YOUR CODE HERE
+        #having a nested loop go over all poissible left cell and right cells and keep the matches
+        res = Cell()#building an empty cell
+
+
+        #if both left and right are not empty we should check all posibble matchets
+        if left != [] and right != []: 
+            for lc in left.parses:
+                for rc in right.parses:
+                    ky = ' '.join([lc.lhs,rc.lhs])
+                    if ky in cfg.rhs2lhs: #find the lhs of given key (ky)
+                        res.parses.append(Entry({'lhs': cfg.rhs2lhs[ky][0],
+                                  'rhs_first': lc, 'rhs_second':rc}))
+                        print(res.parses[0].lhs)
+        # elif left != []: #only one cell and we have to check all possible "lhs => terminal" grammars
+
+        # else:
+        return res.parses
         #########################################
 
     def parse(self, sentence: []):
