@@ -112,9 +112,9 @@ class CYKParser:
             for i in reversed(range(0,j)):
                 for left_ind in range(i,j): #seeking all cells on the left of (i,j)
                     for right_ind in range(i+1,j+1): #seeking all cells on the right of (i,j)
-                        if i==0 and j == 4:
+                        # if i==0 and j == 4:
                             #print('0---4')
-                            if left_ind == 1 and right_ind == 2:
+                            # if left_ind == 1 and right_ind == 2:
                                 # print('0---4')
                                 # print((i,left_ind),(right_ind,j))
                                 # print(self.table[(i,left_ind)].parses,self.table[(right_ind,j)].parses)
@@ -162,14 +162,14 @@ class CYKParser:
                     #         self.table[(i,j)].extend(res)
 
         #print(self.table[(0,1)].parses[0].lhs)
-        print('8888888888888')
-        #print(self.table[(0,0)].parses[0].lhs)
-        print(self.table[(0,1)].parses[0].lhs)
-        print(self.table[(2,2)].parses[0].lhs)
-        print(self.table[(3,4)].parses[0].lhs)
-        print(self.table[(2,4)].parses[0].lhs)
-        print(self.table[(0,4)].parses[0].lhs)
-        print(self.table[(5,5)].parses[0].lhs)
+        # print('8888888888888')
+        # #print(self.table[(0,0)].parses[0].lhs)
+        # print(self.table[(0,1)].parses[0].lhs)
+        # print(self.table[(2,2)].parses[0].lhs)
+        # print(self.table[(3,4)].parses[0].lhs)
+        # print(self.table[(2,4)].parses[0].lhs)
+        # print(self.table[(0,4)].parses[0].lhs)
+        # print(self.table[(5,5)].parses[0].lhs)
         #########################################
 
     def print_entry(self, entry: Entry):
@@ -233,9 +233,13 @@ if __name__ == '__main__':
                 if word in cfg.terminals:
                     sentence.append(word)
 
+            parser = CYKParser(cfg)
             parser.m = len(sentence)
-            print(sentence,'-----sentence')
+            
+            if len(sentence) == 0:
+                continue
+            print(sentence)
             # parse the input sentence
             parser.parse(sentence)
-            print(parser.table[(0,5)].parses,'  ----parses')
+            #print(parser.table[(0,5)].parses,'  ----parses')
             print(parser.print_one_parse())
