@@ -189,6 +189,7 @@ class CYKParser:
         #########################################
 
     def print_rec(self, entry: Entry):
+        #print(entry.rhs_first,entry.rhs_second,entry.terminal)
         if entry.rhs_first != None and entry.rhs_second != None:
             s = '(' + entry.lhs
         #print(node.symbol)
@@ -200,7 +201,7 @@ class CYKParser:
             s += ')'
 
             return s
-        else:
+        elif entry.terminal != None:
             return '(' + entry.lhs + ' ' + entry.terminal + ')'
 
     def print_one_parse(self):
@@ -211,7 +212,15 @@ class CYKParser:
         if len(self.table[(0, self.m - 1)].parses) == 0:
             return None
         else:
-            return self.print_entry(self.table[(0, self.m - 1)].parses[0])
+            #print(len(self.table[(0, self.m - 1)].parses),'llll')
+            max_str = 0
+            for i in range(len(self.table[(0, self.m - 1)].parses)):
+                s = self.print_entry(self.table[(0, self.m - 1)].parses[i])
+                if max_str<len(s):
+                    max_str = len(s)
+                    best_str = s
+            return s
+            #return self.print_entry(self.table[(0, self.m - 1)].parses[0])
 
 if __name__ == '__main__':
     cfg = CFG()
@@ -235,11 +244,29 @@ if __name__ == '__main__':
 
             parser = CYKParser(cfg)
             parser.m = len(sentence)
-            
+            #print(parser.m)
+
             if len(sentence) == 0:
                 continue
             print(sentence)
             # parse the input sentence
             parser.parse(sentence)
-            #print(parser.table[(0,5)].parses,'  ----parses')
             print(parser.print_one_parse())
+
+            # for k in parser.table.keys():
+            #     if 6 in k:
+            #         for p in parser.table[k].parses:
+            #             print(p.lhs)
+            # print(parser.table.keys())
+            # print(parser.table[(6,6)].parses[0].lhs)
+
+            for i in range(0,12):
+                s = ''
+                for j in range(0,12):
+                    res = set()
+                    if (i,j) in parser.table.keys():
+                        for items in parser.table[(i,j)].parses:
+                            res.add(items.lhs)
+                        s+= ' '.join(list(res))
+                    s += '\t'
+                print(s)
