@@ -81,17 +81,17 @@ class Generator:
 
 
 
-grammar_path = '../data/grammar.gr'
-cfg = CFG()
-cfg.load_grammar(grammar_path)
-# set randomness to False for testing purpose
-# to generate interesting sentences, set randomness = True
-gen = Generator(cfg, False)
+# grammar_path = '../data/grammar.gr'
+# cfg = CFG()
+# cfg.load_grammar(grammar_path)
+# # set randomness to False for testing purpose
+# # to generate interesting sentences, set randomness = True
+# gen = Generator(cfg, False)
 
-for lhs in cfg.lhs2rhs.keys():
-    rhss = [rhs for rhs, count in cfg.lhs2rhs[lhs]]
-    rhs = gen.select_rule(lhs)
+# for lhs in cfg.lhs2rhs.keys():
+#     rhss = [rhs for rhs, count in cfg.lhs2rhs[lhs]]
+#     rhs = gen.select_rule(lhs)
 
-root = Node('ROOT')
-gen.grow_node(root)
-print(gen.print_node(root))
+# root = Node('ROOT')
+# gen.grow_node(root)
+# print(gen.print_node(root))

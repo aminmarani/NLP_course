@@ -55,4 +55,6 @@ def test_print_entry():
     e3 = Entry({'lhs': 'Noun',
                'rhs_first': e1,
                'rhs_second': e2})
+    #print(parser.print_entry(e3))
     assert parser.print_entry(e3) == ' (Noun (Adj pickled) (Noun president))'
+                                      #(Noun (Adj pickled)  (Noun president))
