@@ -260,9 +260,9 @@ if __name__ == '__main__':
             # print(parser.table.keys())
             # print(parser.table[(6,6)].parses[0].lhs)
 
-            for i in range(0,12):
+            for i in range(0,len(sentence)):
                 s = ''
-                for j in range(0,12):
+                for j in range(0,len(sentence)):
                     res = set()
                     if (i,j) in parser.table.keys():
                         for items in parser.table[(i,j)].parses:
